@@ -1,4 +1,5 @@
 import express from 'express';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const articleInfo = [
   { name: 'learn-node', upvotes: 0, comments: [] },
@@ -9,6 +10,28 @@ const articleInfo = [
 const app = express();
 
 app.use(express.json()); //Tells our server to parse incoming JSON data in the request body and make it available under req.body
+
+//load data from mongodb
+// app.get('/api/articles/:name', async (req, res) => {
+//     const { name }= req.params; //Extract the name parameter from the request URL'')
+
+//     const uri = 'mongodb://127.0.0.1:27017/'; //Connection string to connect to the MongoDB server running on localhost
+
+//     const client = new MongoClient(uri, { 
+//         serverApi: {
+//             version: ServerApiVersion.v1,
+//             strict: true,
+//             deprecationErrors: true,
+//         }
+//     });
+
+//     await client.connect();
+
+//     const db = client.db('full-stack-react-db'); 
+//     const article = await db.collection('articles').findOne({ name }); //Find the article with the matching name in the articles collection
+
+//     res.json(article); //Send the article info back to the client as a JSON response
+// });
 
 //create an end point - path can send request to and will send msg or data back 
 // app.get('/hello', function(req, res) {
