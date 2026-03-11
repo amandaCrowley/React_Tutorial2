@@ -1,5 +1,7 @@
 import {useParams} from "react-router-dom";
+import axios from "axios";
 import articles from "./Article-content";
+import AddCommentForm from "../AddCommentForm";
 
 export default function ArticlePage() {
   const { name } = useParams();
