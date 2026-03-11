@@ -11,6 +11,8 @@ import ArticlesList from './pages/ArticlesListPage'
 import ArticlePage, { loader as articleLoader } from './pages/ArticlePage' 
 import Layout from './pages/Layout'
 import NotFoundPage from './pages/NotFoundPage'
+import LoginPage from './pages/LoginPage'
+import CreateAccountPage from './pages/CreateAccountPage'
 
 const routes = [{
     path: '/',
@@ -29,6 +31,12 @@ const routes = [{
       path: 'articles/:name', //This is a parameter that we can use to load different articles based on the name in the URL - anything after the articles/ will be captured
       element: <ArticlePage />,
       loader: articleLoader //This is a function that will be called when the user navigates to this page - it will load the article data based on the name in the URL and pass it to the ArticlePage component as a prop
+    } , {
+      path: '/login',
+      element: <LoginPage />
+    }, {
+      path: '/create-account',
+      element: <CreateAccountPage />
     }]
 }]
 const router = createBrowserRouter(routes);
