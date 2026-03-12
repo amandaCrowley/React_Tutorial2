@@ -3,9 +3,9 @@ import { MongoClient, ServerApiVersion } from 'mongodb';
 import admin from 'firebase-admin';
 import fs from 'fs';
 
-const credentials = JSON.parse()(
-    fs.readFileSync('./credentials.json')
-)
+const credentials = JSON.parse(
+  fs.readFileSync('./credentials.json', 'utf-8')
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(credentials)
@@ -42,25 +42,49 @@ async function connectToDb() {
 
 //load data from mongodb
 app.get('/api/articles/:name', async (req, res) => {
-    const { name }= req.params; //Extract the name parameter from the request URL'')
-
-    
+    const { name }= req.params; //Extract the name parameter from the request URL'')    
     const article = await db.collection('articles').findOne({ name }); //Find the article with the matching name in the articles collection
 
     res.json(article); //Send the article info back to the client as a JSON response
+});
+
+//Middle ware callback function that will be called for every request that hasn't been handled by any of the previous route handlers. It checks if the request has an authtoken header, and if it does, it verifies the token using Firebase Admin SDK and adds the user information to the request object. If there is no authtoken header, it sends a 400 Bad Request response back to the client. Finally, it calls next() to pass control to the next middleware function in the stack.
+app.use(async function(req, res, next) { //Will be called for every request that hasn't been handled yet
+    const {authtoken} = req.headers; 
+
+    if(authtoken) {
+        const user = await admin.auth().verifyIdToken(authtoken);
+        req.user = user; //Add the user to the request object
+        next(); //Call the next middleware function in the stack
+    }else{
+        res.sendStatus(400);
+    } 
 });
 
 //find the mathing article and increment the upvotes by 1, then send the updated article info back to the client
 //Test in Postman by sending a POST request to http://localhost:8000/api/articles/learn-node/upvote
 app.post('/api/articles/:name/upvote', async (req, res) => {
     const { name }= req.params; //Extract the name parameter from the request URL
+    const {uid } = req.user;
 
-    const updatedArticle = await db.collection('articles').findOneAndUpdate({name}, { 
-        $inc: { upvotes: 1 }    //increment the upvotes $inc
-    }, { 
-        returnDocument: 'after' //Return the updated document after the update operation is applied
-    }); 
-    res.json(updatedArticle); //Send the updated article info back to the client as a JSON response
+    const article = await db.collection('articles').findOne({ name }); //Find the article with the matching name in the articles collection
+    const upvoteIds = article.upvoteIds || []; //Get the upvoteIds array from the article document, or initialize it as an empty array if it doesn't exist
+    const canUpvote = uid && !upvoteIds.includes(uid); 
+
+    if (canUpvote) {
+        
+    
+
+        const updatedArticle = await db.collection('articles').findOneAndUpdate({name}, { 
+            //$inc: { upvotes: 1 }    //increment the upvotes $inc
+            $push: { upvoteIds: uid } //Add user's id on the array. This ensures that you can only add one upvote per article per user, because if the user has already upvoted, their id will already be in the upvoteIds array and won't be added again
+        }, { 
+            returnDocument: 'after' //Return the updated document after the update operation is applied
+        }); 
+        res.json(updatedArticle); //Send the updated article info back to the client as a JSON response
+    } else {
+        res.status(403).json({ message: 'You have already upvoted this article' }); //If the user has already upvoted, send a 403 Forbidden response back to the client with an error message        
+    }
 });
 
 
