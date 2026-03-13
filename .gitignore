@@ -1,3 +1,5 @@
 back-end/credentials.json
 front-end/.env
 back-end/dist/
+back-end/.env
+back-end/prod-env.yaml

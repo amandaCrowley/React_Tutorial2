@@ -2,6 +2,14 @@ import express from 'express';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import admin from 'firebase-admin';
 import fs from 'fs';
+import  { fileURLToPath } from 'url';
+import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const credentials = JSON.parse(
   fs.readFileSync('./credentials.json', 'utf-8')
@@ -25,7 +33,9 @@ app.use(express.json()); //Tells our server to parse incoming JSON data in the r
 let db;
 
 async function connectToDb() {
-    const uri = 'mongodb://127.0.0.1:27017/'; //Connection string to connect to the MongoDB server running on localhost
+    const uri = !process.env.MONGODB_USERNAME 
+    ? 'mongodb://127.0.0.1:27017/' //Local connection string 
+    : `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@react-tutorial-cluster.cik4q6n.mongodb.net/?appName=react-tutorial-cluster`; //Connection string for MongoDB Atlas, using the username and password from environment variables
 
     const client = new MongoClient(uri, { 
         serverApi: {
@@ -39,6 +49,12 @@ async function connectToDb() {
 
     db = client.db('full-stack-react-db'); 
 }
+
+app.use(express.static(path.join(__dirname, '../dist'))); //Serve front end files from the build (dist) directory from the back end
+
+app.get(/^(?!\/api).+/, (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html')); //Serve the index.html file from the build directory for any request that doesn't start with /api
+});
 
 //load data from mongodb
 app.get('/api/articles/:name', async (req, res) => {
@@ -106,11 +122,13 @@ app.post('/api/articles/:name/comments', async (req, res) => {
     res.json(updatedArticle); //Send  back to the client as a JSON response
 });
 
+const PORT = process.env.PORT || 8000; //Use the PORT environment variable if it's set, otherwise default to 8000
+
 async function startServer() {
     await connectToDb(); //Connect to the MongoDB database before starting the server
 
-    app.listen(8000, function() {
-    console.log('Server is listening on port 8000');
+    app.listen(PORT, function() {
+    console.log(`Server is listening on port ${PORT}`);
 });
 }
 
